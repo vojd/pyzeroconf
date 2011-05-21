@@ -35,6 +35,34 @@ class PacketGeneration(unittest.TestCase):
         generated = r.DNSOutgoing(0)
         parsed = r.DNSIncoming(generated.packet())
         print("parsed %s " % parsed)
+        self.assertEqual(type(parsed), r.DNSIncoming)
+        
+    def testParseOwnPacketSimpleUnicast(self):
+        generated = r.DNSOutgoing(0, 0)
+        parsed = r.DNSIncoming(generated.packet())
+        print("parsed %s " % parsed)
+        self.assertEqual(type(parsed), r.DNSIncoming)
+
+    def testParseOwnPacketFlags(self):
+        generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
+        parsed = r.DNSIncoming(generated.packet())
+        print("parsed %s " % parsed)
+
+    def testParseOwnPacketQuestion(self):
+        generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
+        generated.addQuestion(r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN))
+        parsed = r.DNSIncoming(generated.packet())
+        print("parsed %s " % parsed)
+        
+    def testMatchQuestion(self):
+        generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
+        question = r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN)
+        generated.addQuestion(question)
+        parsed = r.DNSIncoming(generated.packet())
+        print("parsed.questions " % parsed.questions)
+        self.assertEqual(len(generated.questions), 1)
+        self.assertEqual(len(generated.questions), len(parsed.questions))
+        self.assertEqual(question, parsed.questions[0])
         
 class Framework(unittest.TestCase):
 

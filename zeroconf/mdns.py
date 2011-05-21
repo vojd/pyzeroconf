@@ -30,6 +30,7 @@ import threading
 import select
 import traceback
 import logging
+
 log = logging.getLogger(__name__)
 from zeroconf import dns,mcastsocket,__version__
 
@@ -69,6 +70,7 @@ class Engine(threading.Thread):
     def run(self):
         while not globals()['_GLOBAL_DONE']:
             rs = self.getReaders()
+            print("getReaders rs " , rs)
             if len(rs) == 0:
                 # No sockets to manage, but we wait for the timeout
                 # or addition of a socket
@@ -80,10 +82,12 @@ class Engine(threading.Thread):
             else:
                 try:
                     rr, wr, er = select.select(rs, [], [], self.timeout)
+                    print("rr ", rr)
                 except Exception as err:
                     log.warn( 'Select failure, ignored: %s', err )
                 else:
                     for socket in rr:
+                        print("socket", socket)
                         try:
                             self.readers[socket].handle_read()
                         except Exception as err:
@@ -511,7 +515,7 @@ class Zeroconf(object):
                     if question.type == dns._TYPE_A or question.type == dns._TYPE_ANY:
                         for service in list(self.services.values()):
                             if service.server == question.name.lower():
-                                out.addAnswer(msg, DNSAddress(question.name, dns._TYPE_A, dns._CLASS_IN | dns._CLASS_UNIQUE, dns._DNS_TTL, service.address))
+                                out.addAnswer(msg, dns.DNSAddress(question.name, dns._TYPE_A, dns._CLASS_IN | dns._CLASS_UNIQUE, dns._DNS_TTL, service.address))
 
 
                     service = self.services.get(question.name.lower(), None)
