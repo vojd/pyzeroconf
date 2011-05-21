@@ -28,9 +28,8 @@ from zeroconf import dns as r
 from zeroconf import mdns
 import unittest
 
-
 class PacketGeneration(unittest.TestCase):
-
+    """
     def testParseOwnPacketSimple(self):
         generated = r.DNSOutgoing(0)
         parsed = r.DNSIncoming(generated.packet())
@@ -52,8 +51,9 @@ class PacketGeneration(unittest.TestCase):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
         generated.addQuestion(r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN))
         parsed = r.DNSIncoming(generated.packet())
-        print("parsed %s " % parsed)
+        print("parsed questions %s " % parsed.questions)
         
+    
     def testMatchQuestion(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
         question = r.DNSQuestion("testname.local.", r._TYPE_SRV, r._CLASS_IN)
@@ -63,7 +63,30 @@ class PacketGeneration(unittest.TestCase):
         self.assertEqual(len(generated.questions), 1)
         self.assertEqual(len(generated.questions), len(parsed.questions))
         self.assertEqual(question, parsed.questions[0])
+    """
+    def testJoin(self):
+        """
+            l is a copy of a list from self.data obtained from the dns.packet() method
+            causes an xmlrpc.client.Fault invalid character 0x0
+        """
         
+        l = [b'\x00\x00', b'\x00\x00', b'\x00\x00', b'\x00\x00', b'\x00\x00', b'\x00\x00']
+        
+        ff = ''.join(s.decode('utf-8', 'replace') for s in l)
+        print(ff)
+        """
+        s = ''
+        for i in l:
+            try:
+                s += i.decode('utf-8', 'ignore')
+            except Exception as e:
+                print(e)
+            
+        #i = ''.join(s.decode() for s in l)
+        print(s)
+        """
+        
+ 
 class Framework(unittest.TestCase):
 
     def testLaunchAndClose(self):
@@ -71,4 +94,5 @@ class Framework(unittest.TestCase):
         rv.close()
 
 if __name__ == '__main__':
+    
     unittest.main()

@@ -441,7 +441,7 @@ class DNSIncoming(object):
         #FIXME: self.data is a string here and cannot be used as it is, needs to be bytes
         format = '!HHHHHH'
         length = struct.calcsize(format)
-        print("self.data %s" % (self.data))
+        print("readHeader() self.data %s" % (self.data))
         try:
             info = struct.unpack(format, self.data[self.offset:self.offset+length])
             self.offset += length
@@ -460,6 +460,7 @@ class DNSIncoming(object):
         """Reads questions section of packet"""
         format = '!HH'
         length = struct.calcsize(format)
+        print("readQuestions() self.data %s" % (self.data))
         for i in range(0, self.numQuestions):
             name = self.readName()
             info = struct.unpack(format, self.data[self.offset:self.offset+length])
@@ -637,32 +638,38 @@ class DNSOutgoing(object):
         format = '!c'
         print("writeByte " , value, type(value))
         #self.data.append(struct.pack(format, chr(value)))    #FIXME: struct.error: char format requires a bytes object of length 1
-        try:
-            self.data.append(struct.pack(format(chr(value))))
-        except Exception as e:
-            print("Exception: writeByte", e)
+        v = bytes([value])
+        self.data.append(struct.pack(format, v))
+        print("self.data after writeByte" , self.data)
         self.size += 1
 
     def insertShort(self, index, value):
         """Inserts an unsigned short in a certain position in the packet"""
+        print("insertShort", index, value, type(value))
         format = '!H'
         self.data.insert(index, struct.pack(format, value))
+        print("self.data after insertShort", self.data)
         self.size += 2
 
     def writeShort(self, value):
+        print("writeShort", value, type(value))
         """Writes an unsigned short to the packet"""
         format = '!H'
-        self.data.append(struct.pack(format, value))
+        self.data.append(struct.pack(format, int(value)))
+        print("self.data after writeShort", self.data)
         self.size += 2
 
     def writeInt(self, value):
         """Writes an unsigned integer to the packet"""
+        print("writeInt", value, type(value))
         format = '!I'
         self.data.append(struct.pack(format, int(value)))
         self.size += 4
 
     def writeString(self, value, length):
         """Writes a string to the packet"""
+        
+        print("writeString ", value, length)
         format = '!' + str(length) + 's'
         self.data.append(struct.pack(format, value))
         self.size += length
@@ -759,8 +766,22 @@ class DNSOutgoing(object):
                 self.insertShort(0, 0)
             else:
                 self.insertShort(0, self.id)
-        
-        return ''.join(str(self.data))
+        print("self.data in packet()", self.data)
+        #s = ''.join([s.decode('utf-8', 'ignore') for s in self.data])
+        #print("packet finally >> ", s)  
+        return 's'
+                      
+        #return ''.join(self.data)
+        """
+        try:
+            
+            r = ''.join(f.decode() for f in self.data)
+        except Exception as e:
+            r = ''
+            print(e)
+        print("def packet() to return ", r)
+        return 'testserver.local'
+        """
     
 
 class DNSCache(object):
