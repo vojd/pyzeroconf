@@ -24,7 +24,6 @@ import struct
 import socket
 import traceback
 import logging
-from functools import reduce
 log = logging.getLogger(__name__)
 __all__ = [
     'ServiceInfo',
@@ -154,7 +153,7 @@ class DNSEntry(object):
     """A DNS entry"""
 
     def __init__(self, name, type, clazz):
-        self.key = name.lower()
+        self.key = string.lower(name)
         self.name = name
         self.type = type
         self.clazz = clazz & _CLASS_MASK
@@ -417,8 +416,6 @@ class DNSIncoming(object):
         """Reads header portion of packet"""
         format = '!HHHHHH'
         length = struct.calcsize(format)
-        d = self.data[self.offset:self.offset+length]
-        print("d %s type(%s) " % ( d, type(d)))
         info = struct.unpack(format, self.data[self.offset:self.offset+length])
         self.offset += length
 
@@ -604,58 +601,45 @@ class DNSOutgoing(object):
     def writeByte(self, value):
         """Writes a single byte to the packet"""
         format = '!c'
-        
-        print("before writeByte value %s" % (value))
-        value = bytes([value])  #FIXME: 
-        print("after writeByte value %s" % (value))
-        try:
-            self.data.append(struct.pack(format, value ))
-            self.size += 1
-        except Exception as e:
-            print("writeByte", e)
+        self.data.append(struct.pack(format, chr(value)))
+        self.size += 1
 
     def insertShort(self, index, value):
         """Inserts an unsigned short in a certain position in the packet"""
-        print("insertShort %s %s" % (index, value))
         format = '!H'
-        self.data.insert(index, struct.pack(format, int(value)))
+        self.data.insert(index, struct.pack(format, value))
         self.size += 2
 
     def writeShort(self, value):
         """Writes an unsigned short to the packet"""
-        print("writeShort %s" % (value))
         format = '!H'
         self.data.append(struct.pack(format, value))
         self.size += 2
 
     def writeInt(self, value):
         """Writes an unsigned integer to the packet"""
-        print("writeInt %s" % (value))
         format = '!I'
         self.data.append(struct.pack(format, int(value)))
         self.size += 4
 
     def writeString(self, value, length):
         """Writes a string to the packet"""
-        print("writeString %s length: %s " % (value, length))
         format = '!' + str(length) + 's'
         self.data.append(struct.pack(format, value))
         self.size += length
 
     def writeUTF(self, s):
         """Writes a UTF-8 string of a given length to the packet"""
-        print("writeUTF %s " % (s))
         utfstr = s.encode('utf-8')
         length = len(utfstr)
         if length > 64:
             raise NamePartTooLongException
         self.writeByte(length)
-        print("self.writeString(%s, %s)" % (utfstr, length))
         self.writeString(utfstr, length)
 
     def writeName(self, name):
         """Writes a domain name to the packet"""
-        print("writeName %s" % (name))
+
         try:
             # Find existing instance of this name in packet
             #
@@ -681,13 +665,11 @@ class DNSOutgoing(object):
 
     def writeQuestion(self, question):
         """Writes a question to the packet"""
-        print("writeQuestion %s " % (question))
         self.writeName(question.name)
         self.writeShort(question.type)
         self.writeShort(question.clazz)
 
     def writeRecord(self, record, now):
-        print("writeRecord %s %s ")
         """Writes a record (answer, authoritative answer, additional) to
         the packet"""
         self.writeName(record.name)
@@ -735,11 +717,7 @@ class DNSOutgoing(object):
                 self.insertShort(0, 0)
             else:
                 self.insertShort(0, self.id)
-        
-        #return ''.join(str(s) for s in self.data)
-        return ''.join(str(self.data))
-            
-        
+        return ''.join(self.data)
 
 
 class DNSCache(object):
@@ -882,7 +860,7 @@ class ServiceInfo(object):
                     result[key] = value
 
             self.properties = result
-        except Exception as err:
+        except Exception, err:
             log.error( "Failure composing text: %s", traceback.format_exc() )
             self.properties = None
 
@@ -999,3 +977,4 @@ class ServiceInfo(object):
                 result += self.text[:17] + "..."
         result += "]"
         return result
+

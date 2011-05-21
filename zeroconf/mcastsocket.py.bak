@@ -60,7 +60,7 @@ def create_socket( address, TTL=1, loop=True, reuse=True ):
 #            sock.bind( address )
 #        else:
         sock.bind(('',address[1]))
-    except Exception as err:
+    except Exception, err:
         # Some versions of linux raise an exception even though
         # the SO_REUSE* options have been set, so ignore it
         log.error('Failure binding: %s', err)
@@ -97,13 +97,13 @@ def allow_reuse( sock, reuse=True ):
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        except AttributeError as err:
+        except AttributeError, err:
             # ignore common case where SO_REUSEPORT isn't provided on Linux
             if err.args[0].find('SO_REUSEPORT') > -1:
                 pass
             else:
                 raise
-        except Exception as err:
+        except Exception, err:
             # SO_REUSEADDR should be equivalent to SO_REUSEPORT for
             # multicast UDP sockets (p 731, "TCP/IP Illustrated,
             # Volume 2"), but some BSD-derived systems require
