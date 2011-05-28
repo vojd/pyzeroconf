@@ -84,7 +84,7 @@ class Engine(threading.Thread):
                     rr, wr, er = select.select(rs, [], [], self.timeout)
                     print("rr ", rr)
                 except Exception as err:
-                    log.warn( 'Select failure, ignored: %s', err )
+                    log.warn( 'mdns.Engine.run() Select failure, ignored: %s', err )
                 else:
                     for socket in rr:
                         print("socket", socket)

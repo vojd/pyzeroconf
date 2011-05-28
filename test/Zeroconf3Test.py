@@ -89,7 +89,7 @@ class PacketGeneration(unittest.TestCase):
         
  
 class PacketForm(unittest.TestCase):
-    """
+
     def testTransactionID(self):
         # ID must be zero in a DNS-SD packet
         generated = r.DNSOutgoing(r._FLAGS_QR_QUERY)
@@ -102,12 +102,12 @@ class PacketForm(unittest.TestCase):
         bytes = generated.packet()
         flags = ord(bytes[2]) << 8 | ord(bytes[3])
         self.assertEqual(flags, 0x0)
-    """
+    
     def testResponseHeaderBits(self):
         generated = r.DNSOutgoing(r._FLAGS_QR_RESPONSE)
         bytes = generated.packet()
         print("bytes", bytes.encode())
-        flags = ord(bytes[2]) << 8 | ord(bytes[3])
+        flags = ord(bytes[2].encode()) << 8 | ord(bytes[3].encode())
         print("flags " , flags)
         self.assertEqual(flags, 0x8000)
         

@@ -438,21 +438,21 @@ class DNSIncoming(object):
 
     def readHeader(self):
         """Reads header portion of packet"""
-        print( "== readHeader start ==")
+        #print( "== readHeader start ==")
         
         format = '!HHHHHH'
         length = struct.calcsize(format)
-        print("length", length)
-        print("self.offset", self.offset)
+        #print("length", length)
+        #print("self.offset", self.offset)
         
-        print("data with self.offset", self.data[self.offset:self.offset+length])
-        print("self.data > %s <" % (self.data))
-        print("len of data %s" % (len(self.data))) 
+        #print("data with self.offset", self.data[self.offset:self.offset+length])
+        #print("self.data > %s <" % (self.data))
+        #print("len of data %s" % (len(self.data))) 
         
         d = self.data[self.offset:self.offset+length]
-        print("d >> " , d)
+        #print("d >> " , d)
         info = struct.unpack(format, d.encode())    # FIXME: d is a string and needs to be encoded
-        print("info >", info)
+        #print("info >", info)
         self.offset += length
 
         self.id = info[0]
@@ -462,31 +462,11 @@ class DNSIncoming(object):
         self.numAuthorities = info[4]
         self.numAdditionals = info[5]
         
-        print( "== readHeader end ==")
+        #print( "== readHeader end ==")
         
-        #FIXME: self.data is a string here and cannot be used as it is, needs to be bytes
-        """
-        format = '!HHHHHH'
-        length = struct.calcsize(format)
-        print("readHeader() self.data %s" % (self.data))
-        try:
-            info = struct.unpack(format, self.data[self.offset:self.offset+length])
-            self.offset += length
-    
-            self.id = info[0]
-            self.flags = info[1]
-            self.numQuestions = info[2]
-            self.numAnswers = info[3]
-            self.numAuthorities = info[4]
-            self.numAdditionals = info[5]
-        except Exception as e:
-            log.debug( "%s", e)
-            print("DNSIncoming.readHeader() ", e)
-        """
-
     def readQuestions(self):
         """Reads questions section of packet"""
-        print("readQuestions() self.data %s, | numQuestions %s" % (self.data, self.numQuestions))
+        #print("readQuestions() self.data %s, | numQuestions %s" % (self.data, self.numQuestions))
         format = '!HH'
         length = struct.calcsize(format)
         for i in range(0, self.numQuestions):
@@ -496,7 +476,7 @@ class DNSIncoming(object):
             self.offset += length
 
             question = DNSQuestion(name, info[0], info[1])
-            print("readQuestions() question > " , question)
+            #print("readQuestions() question > " , question)
             self.questions.append(question)
 
     def readInt(self):
@@ -671,7 +651,7 @@ class DNSOutgoing(object):
         #self.data.append(struct.pack(format, chr(value)))    #FIXME: struct.error: char format requires a bytes object of length 1
         v = bytes([value])
         self.data.append(struct.pack(format, v))
-        print("self.data after writeByte" , self.data)
+        #print("self.data after writeByte" , self.data)
         self.size += 1
 
     def insertShort(self, index, value):
@@ -684,15 +664,15 @@ class DNSOutgoing(object):
 
     def writeShort(self, value):
         """Writes an unsigned short to the packet"""
-        print("writeShort", value, type(value))
+        #print("writeShort", value, type(value))
         format = '!H'
         self.data.append(struct.pack(format, int(value)))
-        print("self.data after writeShort", self.data)
+        #print("self.data after writeShort", self.data)
         self.size += 2
 
     def writeInt(self, value):
         """Writes an unsigned integer to the packet"""
-        print("writeInt", value, type(value))
+        #print("writeInt", value, type(value))
         format = '!I'
         self.data.append(struct.pack(format, int(value)))
         self.size += 4
@@ -700,7 +680,7 @@ class DNSOutgoing(object):
     def writeString(self, value, length):
         """Writes a string to the packet"""
         
-        print("writeString ", value, length)
+        #print("writeString ", value, length)
         format = '!' + str(length) + 's'
         self.data.append(struct.pack(format, value))
         self.size += length
@@ -797,24 +777,15 @@ class DNSOutgoing(object):
                 self.insertShort(0, 0)
             else:
                 self.insertShort(0, self.id)
-        print("self.data in packet()", self.data)
+        #print("self.data in packet()", self.data)
         #s = ''.join([s.decode('utf-8', 'ignore') for s in self.data])
         #print("packet finally >> ", s)  
-        s = ''.join(s.decode('utf-8') for s in self.data)
-        print("joined_data %s" % (s) )
+        s = b''.join([s for s in self.data])
+
         return s
                       
-        #return ''.join(self.data)
-        """
-        try:
-            
-            r = ''.join(f.decode() for f in self.data)
-        except Exception as e:
-            r = ''
-            print(e)
-        print("def packet() to return ", r)
-        return 'testserver.local'
-        """
+        
+        
     
 
 class DNSCache(object):
@@ -925,14 +896,14 @@ class ServiceInfo(object):
                         suffix = 'false'
                 else:
                     suffix = ''.encode('utf-8')
-                #list.append('='.join((key, suffix)))    #FIXME: cannot join a byte
-                list.append('='.join((key, suffix.decode())))
+                #list.append('='.join((key, suffix)))    #FIXME: original, cannot join a byte
+                list.append('='.join((key, suffix.decode())))   # FIXME: decoding to string so we can join
             for item in list:
-                #result = ''.join((result, struct.pack('!c', chr(len(item))), item)) # FIXME: char format requires a byte obj ...
-                v = bytes([len(item)])
-                print("v ", v , "type(v)", type(v))
+                #result = ''.join((result, struct.pack('!c', chr(len(item))), item)) # FIXME: char format requires a byte obj ... 
+                v = bytes([len(item)])  #FIXME: turn 
+                #print("v ", v , "type(v)", type(v)) 
                 d = struct.pack('!c', v)
-                result = ''.join( (result, d.decode(), item) )
+                result = ''.join( (result, d.decode(), item) )  # OPTIMIZE: ks
             self.text = result
         else:
             self.text = properties
