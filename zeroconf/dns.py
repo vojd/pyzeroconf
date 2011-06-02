@@ -451,7 +451,10 @@ class DNSIncoming(object):
         
         d = self.data[self.offset:self.offset+length]
         #print("d >> " , d)
-        info = struct.unpack(format, d.encode())    # FIXME: d is a string and needs to be encoded
+        if type(d) == bytes:
+            info = struct.unpack(format, d)
+        else:
+            info = struct.unpack(format, d.encode())    # FIXME: d is a string and needs to be encoded
         #print("info >", info)
         self.offset += length
 
@@ -471,7 +474,8 @@ class DNSIncoming(object):
         length = struct.calcsize(format)
         for i in range(0, self.numQuestions):
             name = self.readName()
-            d = self.data[self.offset:self.offset+length].encode()  # FIXME: as in readHeader, need to encode string to bytes before unpacking
+            #d = self.data[self.offset:self.offset+length].encode()  # FIXME: as in readHeader, need to encode string to bytes before unpacking
+            d = self.data[self.offset:self.offset+length]
             info = struct.unpack(format, d)
             self.offset += length
 
@@ -489,6 +493,7 @@ class DNSIncoming(object):
 
     def readCharacterString(self):
         """Reads a character string from the packet"""
+        print("readCharacterString")
         length = ord(self.data[self.offset])
         self.offset += 1
         return self.readString(length)
@@ -567,8 +572,8 @@ class DNSIncoming(object):
         TODO: there are cases were non-utf-8 data comes through,
         we need to decide how to properly handle these.
         """
-        #return self.data[offset:offset+len_].decode('utf-8','ignore')    #FIXME: after readHeader was encoded we dont need to decode this
-        return self.data[offset:offset+len_]
+        return self.data[offset:offset+len_].decode('utf-8','ignore')    #FIXME: after readHeader was encoded we dont need to decode this
+        #return self.data[offset:offset+len_]
 
     def readName(self):
         """Reads a domain name from the packet"""
@@ -578,7 +583,11 @@ class DNSIncoming(object):
         first = off
 
         while 1:
-            len_ = ord(self.data[off])
+            if not type(self.data[off]) == int: 
+                print("readName")
+                len_ = ord(self.data[off])
+            else:
+                len_ = self.data[off]
             off += 1
             if len_ == 0:
                 break
@@ -589,7 +598,14 @@ class DNSIncoming(object):
             elif t == 0xC0:
                 if next < 0:
                     next = off + 1
-                off = ((len_ & 0x3F) << 8) | ord(self.data[off])
+                # FIXME: we can assume that self.data[off] at this point is an int 
+                #print("line dns line601")
+                v = self.data[off]
+                #print("self.data[off] type(", type(v)," )")
+                if type(self.data[off] == int):
+                    off = ( (len_ & 0x3F) << 8) | self.data[off]
+                else:
+                    off = ((len_ & 0x3F) << 8) | ord(self.data[off])
                 if off >= first:
                     raise DNSNameError( "Bad domain name (circular) at char %s", off )
                 first = off
@@ -647,7 +663,7 @@ class DNSOutgoing(object):
     def writeByte(self, value):
         """Writes a single byte to the packet"""
         format = '!c'
-        print("writeByte " , value, type(value))
+        #print("writeByte " , value, type(value))
         #self.data.append(struct.pack(format, chr(value)))    #FIXME: struct.error: char format requires a bytes object of length 1
         v = bytes([value])
         self.data.append(struct.pack(format, v))
@@ -656,10 +672,10 @@ class DNSOutgoing(object):
 
     def insertShort(self, index, value):
         """Inserts an unsigned short in a certain position in the packet"""
-        print("insertShort", index, value, type(value))
+        #print("insertShort", index, value, type(value))
         format = '!H'
         self.data.insert(index, struct.pack(format, value))
-        print("self.data after insertShort", self.data)
+        #print("self.data after insertShort", self.data)
         self.size += 2
 
     def writeShort(self, value):
@@ -917,13 +933,22 @@ class ServiceInfo(object):
             index = 0
             strs = []
             while index < end:
-                length = ord(text[index])
+                #FIXME: fixed ord() depending on type
+                if type(text[index] == int):
+                    length = text[index]
+                else:
+                    length = ord(text[index])
                 index += 1
                 strs.append(text[index:index+length])
                 index += length
 
             for s in strs:
-                eindex = s.find('=')
+                try:
+                    eindex = s.find('=')
+                except TypeError as e:
+                    eindex = -1
+                    print(e)
+                    
                 if eindex == -1:
                     # No equals sign at all
                     key = s

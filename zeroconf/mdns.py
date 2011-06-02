@@ -68,10 +68,12 @@ class Engine(threading.Thread):
         self.start()
 
     def run(self):
+        #print("run")
         while not globals()['_GLOBAL_DONE']:
             rs = self.getReaders()
-            print("getReaders rs " , rs)
+            #print("getReaders rs " , rs)
             if len(rs) == 0:
+                print("len 0")
                 # No sockets to manage, but we wait for the timeout
                 # or addition of a socket
                 #
@@ -82,12 +84,13 @@ class Engine(threading.Thread):
             else:
                 try:
                     rr, wr, er = select.select(rs, [], [], self.timeout)
-                    print("rr ", rr)
+                    #print("rr ", rr)
                 except Exception as err:
                     log.warn( 'mdns.Engine.run() Select failure, ignored: %s', err )
                 else:
+                    #print("#else")
                     for socket in rr:
-                        print("socket", socket)
+                        #print("socket", socket)
                         try:
                             self.readers[socket].handle_read()
                         except Exception as err:
@@ -96,10 +99,11 @@ class Engine(threading.Thread):
                             log.debug( 'Traceback: %s', traceback.format_exc())
 
     def getReaders(self):
-        result = []
+        #result = []
         self.condition.acquire()
         result = list(self.readers.keys())
         self.condition.release()
+        #print("getReaders() result", result)
         return result
 
     def addReader(self, reader, socket):

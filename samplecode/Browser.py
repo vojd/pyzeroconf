@@ -27,8 +27,11 @@ if __name__ == '__main__':
     try:
         print("1. Testing browsing for a service...")
         type = "_http._tcp.local."
+        
         listener = MyListener()
         browser = ServiceBrowser(r, type, listener)
         input( 'Press <enter> to stop listening > ')
     finally:
         r.close()
+
+
