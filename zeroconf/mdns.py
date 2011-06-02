@@ -322,6 +322,11 @@ class Zeroconf(object):
         name and type, or None if no service matches by the timeout,
         which defaults to 3 seconds."""
         info = dns.ServiceInfo(type, name)
+        try:
+            print("getServiceInfo", info)
+        except Exception as e:
+            print(e)
+        log.debug("getServiceInfo info" % (info))
         if info.request(self, timeout):
             return info
         return None

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import logging,socket,sys,os
+import logging,socket,sys
 from zeroconf import mdns as Zeroconf
 
 # Test a few module features, including service registration, service
@@ -11,7 +11,9 @@ def main(ip=None):
     host_ip = socket.gethostbyname( socket.gethostname())
     try:
         print("1. Testing registration of a service...")
-        desc = {'version':'0.10','a':'test value', 'b':'another value'}
+        desc = {'version':'0.10',
+                'key_a':'value_for_key_b', 
+                'key_b':'value_for_key_b'}
         info = Zeroconf.ServiceInfo(
             "_http._tcp.local.", "My Service Name._http._tcp.local.",
             socket.inet_aton(host_ip), 1234, 0, 0, desc
@@ -33,6 +35,6 @@ def main(ip=None):
         r.close()
 
 if __name__ == '__main__':
-    logging.basicConfig( level = logging.INFO )
+    logging.basicConfig( level = logging.DEBUG )
     usage = 'testmdnssd.py [ip.address]'
     sys.exit( main(*sys.argv[1:]) )

@@ -894,6 +894,37 @@ class ServiceInfo(object):
         self.setProperties(properties)
 
     def setProperties(self, properties):
+        
+        if isinstance(properties, dict):
+            print("setProperties")
+            self.properties = properties
+            print("self.properties", self.properties)
+            _list = []
+            result = ''
+            for key in properties:
+                print("key " , key)
+                value = properties[key]
+                suffix = ''
+                if value is not None:                    
+                    if type(value) == str:
+                        suffix = value
+                    elif type(value) == int:
+                        if value:
+                            suffix = 'true'
+                        else:
+                            suffix = 'false'
+
+                _list.append('='.join((key, suffix)) )
+                print("final list", _list)
+            
+            for item in _list:
+                v = bytes([len(item)])
+                d = struct.pack('!c', v)
+                result = ''.join( (result, d, item))
+            self.text = result
+            print("finalement, self.text", self.text)
+            
+    def original_setProperties(self, properties):
         """Sets properties and text of this info from a dictionary"""
         if isinstance(properties, dict):
             self.properties = properties
