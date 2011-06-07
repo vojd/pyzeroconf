@@ -30,7 +30,7 @@ import threading
 import select
 import traceback
 import logging
-
+from zeroconf.dns import NonUniqueNameException
 log = logging.getLogger(__name__)
 from zeroconf import dns,mcastsocket,__version__
 
@@ -321,12 +321,9 @@ class Zeroconf(object):
         """Returns network's service information for a particular
         name and type, or None if no service matches by the timeout,
         which defaults to 3 seconds."""
+        print("type", type, "name", name)
         info = dns.ServiceInfo(type, name)
-        try:
-            print("getServiceInfo", info)
-        except Exception as e:
-            print(e)
-        log.debug("getServiceInfo info" % (info))
+        #log.debug("getServiceInfo info" % (info))
         if info.request(self, timeout):
             return info
         return None
@@ -491,6 +488,8 @@ class Zeroconf(object):
     def handleQuery(self, msg, addr, port):
         """Deal with incoming query packets.  Provides a response if
         possible."""
+        print("== handleQuery start == ")
+        
         out = None
 
         # Support unicast client responses
@@ -498,10 +497,11 @@ class Zeroconf(object):
         if port != dns._MDNS_PORT:
             out = dns.DNSOutgoing(dns._FLAGS_QR_RESPONSE | dns._FLAGS_AA, 0)
             for question in msg.questions:
+                print("msg.questions", msg.questions)
                 out.addQuestion(question)
         log.debug( 'Questions...')
         for question in msg.questions:
-            log.debug( 'Question: %s', question )
+            log.debug( 'Question: %s type %s - TYPE_PTR: %s', question, question.type, dns._TYPE_PTR)
             if question.type == dns._TYPE_PTR:
                 for service in list(self.services.values()):
                     if question.name == service.type:
@@ -516,18 +516,23 @@ class Zeroconf(object):
                         out.addAdditionalAnswer(dns.DNSService(service.name, dns._TYPE_SRV, dns._CLASS_IN | dns._CLASS_UNIQUE, dns._DNS_TTL, service.priority, service.weight, service.port, service.server))
                         out.addAdditionalAnswer(dns.DNSAddress(service.server, dns._TYPE_A, dns._CLASS_IN | dns._CLASS_UNIQUE, dns._DNS_TTL, service.address))
             else:
+                print("Question.type is not PTR")
                 try:
                     if out is None:
                         out = dns.DNSOutgoing(dns._FLAGS_QR_RESPONSE | dns._FLAGS_AA)
-
+                        print("out" , out)
                     # Answer A record queries for any service addresses we know
                     if question.type == dns._TYPE_A or question.type == dns._TYPE_ANY:
+                        print("question.type == dns._TYPE_A or question.type == dns._TYPE_ANY:")
                         for service in list(self.services.values()):
-                            if service.server == question.name.lower():
+                            print("service %s question %s" % (service.server , question.name) )
+                            if service.server.lower() == question.name.lower():
+                                print("service.server == question.name.lower()")
                                 out.addAnswer(msg, dns.DNSAddress(question.name, dns._TYPE_A, dns._CLASS_IN | dns._CLASS_UNIQUE, dns._DNS_TTL, service.address))
 
 
                     service = self.services.get(question.name.lower(), None)
+                    print(">> ----- >> service", service)
                     if not service: continue
 
                     if question.type == dns._TYPE_SRV or question.type == dns._TYPE_ANY:
@@ -547,6 +552,9 @@ class Zeroconf(object):
         else:
             log.debug( 'No answer for %s', [q for q in msg.questions] )
 
+        print("== handleQuery end == ")
+        
+        
     def send(self, out, addr = dns._MDNS_ADDR, port = dns._MDNS_PORT):
         """Sends an outgoing packet."""
         # This is a quick test to see if we can parse the packets we generate

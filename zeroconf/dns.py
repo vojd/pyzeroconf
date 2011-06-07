@@ -600,7 +600,7 @@ class DNSIncoming(object):
                     next = off + 1
                 # FIXME: we can assume that self.data[off] at this point is an int 
                 #print("line dns line601")
-                v = self.data[off]
+                #v = self.data[off]
                 #print("self.data[off] type(", type(v)," )")
                 if type(self.data[off] == int):
                     off = ( (len_ & 0x3F) << 8) | self.data[off]
@@ -651,6 +651,7 @@ class DNSOutgoing(object):
         if record is not None:
             if now == 0 or not record.isExpired(now):
                 self.answers.append((record, now))
+                log.debug("addAnswerAtTime %s" % (self.answers))
 
     def addAuthorativeAnswer(self, record):
         """Adds an authoritative answer"""
@@ -895,7 +896,9 @@ class ServiceInfo(object):
 
     def setProperties(self, properties):
         
-        if isinstance(properties, dict):
+        if not isinstance(properties, dict):
+            self.text = properties
+        else:
             print("setProperties")
             self.properties = properties
             print("self.properties", self.properties)
@@ -919,10 +922,10 @@ class ServiceInfo(object):
             
             for item in _list:
                 v = bytes([len(item)])
-                d = struct.pack('!c', v)
-                result = ''.join( (result, d, item))
+                #d = struct.pack('!c', v)    #pack length as a byte #FIXME: not needed
+                result = ''.join( (result, v.decode(), item) )
             self.text = result
-            print("finalement, self.text", self.text)
+            
             
     def original_setProperties(self, properties):
         """Sets properties and text of this info from a dictionary"""
